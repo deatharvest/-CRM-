@@ -1,0 +1,217 @@
+package com.business.customer.controller;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.log4j.Logger;
+import org.jeecgframework.core.common.controller.BaseController;
+import org.jeecgframework.core.common.exception.BusinessException;
+import org.jeecgframework.core.common.hibernate.qbc.CriteriaQuery;
+import org.jeecgframework.core.common.model.json.AjaxJson;
+import org.jeecgframework.core.common.model.json.DataGrid;
+import org.jeecgframework.core.constant.Globals;
+import org.jeecgframework.core.util.MyBeanUtils;
+import org.jeecgframework.core.util.StringUtil;
+import org.jeecgframework.tag.core.easyui.TagUtil;
+import org.jeecgframework.web.system.service.SystemService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+import com.business.customer.entity.TBCustomerEntity;
+import com.business.customer.service.TBCustomerServiceI;
+
+/**   
+ * @Title: Controller
+ * @Description: x经销商信息
+ * @author onlineGenerator
+ * @date 2016-03-24 14:01:10
+ * @version V1.0   
+ *
+ */
+@Controller
+@RequestMapping("/tBCustomerController")
+public class TBCustomerController extends BaseController {
+	/**
+	 * Logger for this class
+	 */
+	private static final Logger logger = Logger.getLogger(TBCustomerController.class);
+
+	@Autowired
+	private TBCustomerServiceI tBCustomerService;
+	@Autowired
+	private SystemService systemService;
+	private String message;
+	
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+
+	/**
+	 * x经销商信息列表 页面跳转
+	 * 
+	 * @return
+	 */
+	@RequestMapping(params = "tBCustomer")
+	public ModelAndView tBCustomer(HttpServletRequest request) {
+		return new ModelAndView("business/customer/tBCustomerList");
+	}
+
+	/**
+	 * easyui AJAX请求数据
+	 * 
+	 * @param request
+	 * @param response
+	 * @param dataGrid
+	 * @param user
+	 */
+
+	@RequestMapping(params = "datagrid")
+	public void datagrid(TBCustomerEntity tBCustomer,HttpServletRequest request, HttpServletResponse response, DataGrid dataGrid) {
+		CriteriaQuery cq = new CriteriaQuery(TBCustomerEntity.class, dataGrid);
+		//cq.eq("customerName", keyvalue);
+		//cq.like("customerName", "%"+keyvalue+"%");
+		//查询条件组装器
+		org.jeecgframework.core.extend.hqlsearch.HqlGenerateUtil.installHql(cq, tBCustomer, request.getParameterMap());
+		try{
+		//自定义追加查询条件
+		}catch (Exception e) {
+			throw new BusinessException(e.getMessage());
+		}
+		cq.add();
+		this.tBCustomerService.getDataGridReturn(cq, true);
+		TagUtil.datagrid(response, dataGrid);
+	}
+
+	/**
+	 * 删除x经销商信息
+	 * 
+	 * @return
+	 */
+	@RequestMapping(params = "doDel")
+	@ResponseBody
+	public AjaxJson doDel(TBCustomerEntity tBCustomer, HttpServletRequest request) {
+		AjaxJson j = new AjaxJson();
+		tBCustomer = systemService.getEntity(TBCustomerEntity.class, tBCustomer.getId());
+		message = "x经销商信息删除成功";
+		try{
+			tBCustomerService.delete(tBCustomer);
+			systemService.addLog(message, Globals.Log_Type_DEL, Globals.Log_Leavel_INFO);
+		}catch(Exception e){
+			e.printStackTrace();
+			message = "x经销商信息删除失败";
+			throw new BusinessException(e.getMessage());
+		}
+		j.setMsg(message);
+		return j;
+	}
+	
+	/**
+	 * 批量删除x经销商信息
+	 * 
+	 * @return
+	 */
+	 @RequestMapping(params = "doBatchDel")
+	@ResponseBody
+	public AjaxJson doBatchDel(String ids,HttpServletRequest request){
+		AjaxJson j = new AjaxJson();
+		message = "x经销商信息删除成功";
+		try{
+			for(String id:ids.split(",")){
+				TBCustomerEntity tBCustomer = systemService.getEntity(TBCustomerEntity.class, 
+				id
+				);
+				tBCustomerService.delete(tBCustomer);
+				systemService.addLog(message, Globals.Log_Type_DEL, Globals.Log_Leavel_INFO);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+			message = "x经销商信息删除失败";
+			throw new BusinessException(e.getMessage());
+		}
+		j.setMsg(message);
+		return j;
+	}
+
+
+	/**
+	 * 添加x经销商信息
+	 * 
+	 * @param ids
+	 * @return
+	 */
+	@RequestMapping(params = "doAdd")
+	@ResponseBody
+	public AjaxJson doAdd(TBCustomerEntity tBCustomer, HttpServletRequest request) {
+		AjaxJson j = new AjaxJson();
+		message = "x经销商信息添加成功";
+		try{
+			tBCustomerService.save(tBCustomer);
+			systemService.addLog(message, Globals.Log_Type_INSERT, Globals.Log_Leavel_INFO);
+		}catch(Exception e){
+			e.printStackTrace();
+			message = "x经销商信息添加失败";
+			throw new BusinessException(e.getMessage());
+		}
+		j.setMsg(message);
+		return j;
+	}
+	
+	/**
+	 * 更新x经销商信息
+	 * 
+	 * @param ids
+	 * @return
+	 */
+	@RequestMapping(params = "doUpdate")
+	@ResponseBody
+	public AjaxJson doUpdate(TBCustomerEntity tBCustomer, HttpServletRequest request) {
+		AjaxJson j = new AjaxJson();
+		message = "x经销商信息更新成功";
+		TBCustomerEntity t = tBCustomerService.get(TBCustomerEntity.class, tBCustomer.getId());
+		try {
+			MyBeanUtils.copyBeanNotNull2Bean(tBCustomer, t);
+			tBCustomerService.saveOrUpdate(t);
+			systemService.addLog(message, Globals.Log_Type_UPDATE, Globals.Log_Leavel_INFO);
+		} catch (Exception e) {
+			e.printStackTrace();
+			message = "x经销商信息更新失败";
+			throw new BusinessException(e.getMessage());
+		}
+		j.setMsg(message);
+		return j;
+	}
+	
+
+	/**
+	 * x经销商信息新增页面跳转
+	 * 
+	 * @return
+	 */
+	@RequestMapping(params = "goAdd")
+	public ModelAndView goAdd(TBCustomerEntity tBCustomer, HttpServletRequest req) {
+		if (StringUtil.isNotEmpty(tBCustomer.getId())) {
+			tBCustomer = tBCustomerService.getEntity(TBCustomerEntity.class, tBCustomer.getId());
+			req.setAttribute("tBCustomerPage", tBCustomer);
+		}
+		return new ModelAndView("business/customer/tBCustomer-add");
+	}
+	/**
+	 * x经销商信息编辑页面跳转
+	 * 
+	 * @return
+	 */
+	@RequestMapping(params = "goUpdate")
+	public ModelAndView goUpdate(TBCustomerEntity tBCustomer, HttpServletRequest req) {
+		if (StringUtil.isNotEmpty(tBCustomer.getId())) {
+			tBCustomer = tBCustomerService.getEntity(TBCustomerEntity.class, tBCustomer.getId());
+			req.setAttribute("tBCustomerPage", tBCustomer);
+		}
+		return new ModelAndView("business/customer/tBCustomer-update");
+	}
+}
